@@ -6,9 +6,18 @@
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import GroupAction, ExecuteProcess
+from launch.actions import GroupAction, ExecuteProcess, DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+
 
 def generate_launch_description():
+    pointcloud = LaunchConfiguration('pointcloud')
+    declare_pointcloud = DeclareLaunchArgument(
+        'pointcloud',
+        default_value='False',
+        description='Whether to use pointcloud_to_laserscan')
+
     lgsvl_bridge = ExecuteProcess(cmd=["lgsvl_bridge"])
     
     odom_tf_node = Node(
@@ -33,7 +42,8 @@ def generate_launch_description():
                 'use_inf': True,
                 'inf_epsilon': 1.0
             }],
-            name='pointcloud_to_laserscan'
+            name='pointcloud_to_laserscan',
+            condition=IfCondition(pointcloud)
         )
 
     static_tf_nodes = GroupAction([
@@ -73,6 +83,7 @@ def generate_launch_description():
     ld.add_action(lgsvl_bridge)
     ld.add_action(static_tf_nodes)
     ld.add_action(odom_tf_node)
+    ld.add_action(declare_pointcloud)
     ld.add_action(pointcloud_to_laserscan_node)
-
+    
     return ld
